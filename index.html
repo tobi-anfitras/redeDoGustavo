@@ -1,312 +1,410 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>rede social tobistica</title>
+  
+  <!-- SDK oficial do Supabase via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <!DOCTYPE html>
-    <html lang="pt-BR">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Mural Anônimo</title>
-      
-      <!-- SDK oficial do Supabase via CDN -->
-      <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background-color: #f4f4f9; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+    h1 { margin-bottom: 16px; color: #333; }
     
-      <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-        body { background-color: #f4f4f9; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        h1 { margin-bottom: 16px; color: #333; }
-        
-        /* Botão Principal de Criar Post */
-        .btn-novo-post {
-          background: #2563eb;
-          color: white;
-          border: none;
-          padding: 10px 18px;
-          border-radius: 8px;
-          font-size: 1rem;
-          font-weight: bold;
-          cursor: pointer;
-          margin-bottom: 20px;
-          box-shadow: 2px 2px 0px #1e40af;
-        }
-        .btn-novo-post:active { transform: scale(0.98); }
-    
-        /* Container do Formulário de Criar Post */
-        #form-container {
-          width: 100%;
-          max-width: 450px;
-          margin-bottom: 20px;
-        }
-    
-        .form-post {
-          background: white;
-          border: 2px solid #222;
-          border-radius: 16px;
-          padding: 16px;
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-          box-shadow: 4px 4px 0px #222;
-        }
-    
-        .form-post input, .form-post textarea {
-          width: 100%;
-          padding: 8px 12px;
-          border: 2px solid #222;
-          border-radius: 8px;
-          font-size: 0.95rem;
-        }
-    
-        .form-post textarea { resize: vertical; min-height: 70px; }
-    
-        .form-acoes {
-          display: flex;
-          gap: 10px;
-          justify-content: flex-end;
-        }
-    
-        .btn-cancelar {
-          background: #e5e7eb;
-          border: 2px solid #222;
-          padding: 8px 14px;
-          border-radius: 8px;
-          cursor: pointer;
-          font-weight: bold;
-        }
-    
-        .btn-enviar {
-          background: #10b981;
-          color: white;
-          border: 2px solid #222;
-          padding: 8px 14px;
-          border-radius: 8px;
-          cursor: pointer;
-          font-weight: bold;
-        }
-    
-        #feed { display: flex; flex-direction: column; gap: 20px; width: 100%; max-width: 450px; }
-    
-        /* Card com visual similar ao print */
-        .card {
-          background: white;
-          border: 2px solid #222;
-          border-radius: 16px;
-          padding: 16px;
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-          box-shadow: 4px 4px 0px #222;
-        }
-    
-        .box {
-          border: 2px solid #222;
-          border-radius: 12px;
-          padding: 12px;
-          text-align: center;
-        }
-    
-        .emoji-box { font-size: 2.5rem; background: #fff; }
-        .texto-box { font-size: 1.1rem; color: #222; text-align: left; }
-        .hashtags-box { color: #2563eb; font-size: 0.9rem; font-weight: bold; }
-    
-        .likes-box {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          font-weight: bold;
-        }
-    
-        .btn-like {
-          background: #ff4757;
-          color: white;
-          border: none;
-          padding: 6px 12px;
-          border-radius: 6px;
-          cursor: pointer;
-          font-weight: bold;
-        }
-        .btn-like:active { transform: scale(0.95); }
-    
-        .comentarios-box {
-          text-align: left;
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-    
-        .lista-comentarios {
-          list-style: none;
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-          margin-bottom: 8px;
-        }
-    
-        .lista-comentarios li {
-          background: #f1f2f6;
-          padding: 6px 10px;
-          border-radius: 6px;
-          font-size: 0.85rem;
-        }
-    
-        .form-comentario { display: flex; gap: 6px; }
-        .form-comentario input {
-          flex: 1;
-          padding: 6px;
-          border: 1px solid #ccc;
-          border-radius: 6px;
-        }
-        .form-comentario button {
-          padding: 6px 12px;
-          border: none;
-          background: #222;
-          color: white;
-          border-radius: 6px;
-          cursor: pointer;
-        }
-      </style>
-    </head>
-    <body>
-    
-      <h1>Mural Anônimo 💌</h1>
-      
-      <button class="btn-novo-post" onclick="toggleFormulario()">+ Nova Postagem</button>
-      
-      <!-- O formulário será renderizado aqui -->
-      <div id="form-container"></div>
-    
-      <div id="feed">Carregando postagens...</div>
-    
-      <script>
-        const SUPABASE_URL = "https://satkyjdqreylqhdqjhnu.supabase.co"; 
-        const SUPABASE_KEY = "sb_publishable_W2LesgIfqiJVlRK9tqqQDA_aqfIse9Q";
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    
-        const feedEl = document.getElementById("feed");
-        const formContainerEl = document.getElementById("form-container");
-    
-        // Alterna a exibição do formulário
-        function toggleFormulario() {
-          if (formContainerEl.innerHTML !== "") {
-            formContainerEl.innerHTML = ""; // Desrenderiza o formulário
-            return;
-          }
-    
-          formContainerEl.innerHTML = `
-            <form class="form-post" onsubmit="criarPostagem(event)">
-              <input type="text" id="input-emoji" placeholder="Emoji (ex: 😍, 🚀, 🤡)" maxlength="5" required />
-              <textarea id="input-texto" placeholder="O que você está pensando?" required></textarea>
-              <input type="text" id="input-hashtags" placeholder="Hashtags separadas por espaço (ex: #dev #supabase)" />
-              
-              <div class="form-acoes">
-                <button type="button" class="btn-cancelar" onclick="toggleFormulario()">Cancelar</button>
-                <button type="submit" class="btn-enviar">Publicar</button>
-              </div>
-            </form>
-          `;
-        }
-    
-        // Envia o novo post para o Supabase
-        async function criarPostagem(event) {
-          event.preventDefault();
-    
-          const emoji = document.getElementById("input-emoji").value.trim();
-          const texto = document.getElementById("input-texto").value.trim();
-          const hashtagsRaw = document.getElementById("input-hashtags").value.trim();
+    /* Container para os botões do topo */
+    .acoes-topo {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .btn-acao {
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      color: white;
+    }
+    .btn-acao:active { transform: scale(0.98); }
+
+    .btn-novo-post { background: #2563eb; box-shadow: 2px 2px 0px #1e40af; }
+    .btn-pesquisar { background: #8b5cf6; box-shadow: 2px 2px 0px #6d28d9; }
+
+    /* Containers dinâmicos */
+    #form-container, #search-container {
+      width: 100%;
+      max-width: 450px;
+      margin-bottom: 20px;
+    }
+
+    /* Estilo genérico dos cards de formulários */
+    .form-card {
+      background: white;
+      border: 2px solid #222;
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 4px 4px 0px #222;
+    }
+
+    .form-card input, .form-card textarea {
+      width: 100%;
+      padding: 8px 12px;
+      border: 2px solid #222;
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+
+    .form-card textarea { resize: vertical; min-height: 70px; }
+
+    .form-acoes {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .btn-cancelar {
+      background: #e5e7eb;
+      border: 2px solid #222;
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .btn-enviar {
+      background: #10b981;
+      color: white;
+      border: 2px solid #222;
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    /* Feedback do Filtro Ativo */
+    .filtro-ativo {
+      background: #e0e7ff;
+      border: 2px solid #4338ca;
+      padding: 8px 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      max-width: 450px;
+      font-weight: bold;
+      color: #3730a3;
+    }
+
+    .btn-limpar-filtro {
+      background: transparent;
+      border: none;
+      color: #ef4444;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #feed { display: flex; flex-direction: column; gap: 20px; width: 100%; max-width: 450px; }
+
+    /* Card da Postagem */
+    .card {
+      background: white;
+      border: 2px solid #222;
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 4px 4px 0px #222;
+    }
+
+    .box {
+      border: 2px solid #222;
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .emoji-box { font-size: 2.5rem; background: #fff; }
+    .texto-box { font-size: 1.1rem; color: #222; text-align: left; }
+    .hashtags-box { color: #2563eb; font-size: 0.9rem; font-weight: bold; }
+
+    .likes-box {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+    }
+
+    .btn-like {
+      background: #ff4757;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .btn-like:active { transform: scale(0.95); }
+
+    .comentarios-box {
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .lista-comentarios {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .lista-comentarios li {
+      background: #f1f2f6;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+    }
+
+    .form-comentario { display: flex; gap: 6px; }
+    .form-comentario input {
+      flex: 1;
+      padding: 6px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    .form-comentario button {
+      padding: 6px 12px;
+      border: none;
+      background: #222;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>rede fodastica 💌</h1>
+  
+  <div class="acoes-topo">
+    <button class="btn-acao btn-novo-post" onclick="toggleFormulario()">+ Nova Postagem</button>
+    <button class="btn-acao btn-pesquisar" onclick="togglePesquisa()">🔍 Pesquisar</button>
+  </div>
+  
+  <div id="form-container"></div>
+  <div id="search-container"></div>
+  <div id="filtro-container"></div>
+
+  <div id="feed">Carregando postagens...</div>
+
+  <script>
+    const SUPABASE_URL = "https://satkyjdqreylqhdqjhnu.supabase.co"; 
+    const SUPABASE_KEY = "sb_publishable_W2LesgIfqiJVlRK9tqqQDA_aqfIse9Q";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const feedEl = document.getElementById("feed");
+    const formContainerEl = document.getElementById("form-container");
+    const searchContainerEl = document.getElementById("search-container");
+    const filtroContainerEl = document.getElementById("filtro-container");
+
+    let hashtagAtual = null; // Guarda a hashtag pesquisada no momento
+
+    // Alterna o formulário de criação
+    function toggleFormulario() {
+      searchContainerEl.innerHTML = ""; // Fecha pesquisa se estiver aberta
+      if (formContainerEl.innerHTML !== "") {
+        formContainerEl.innerHTML = "";
+        return;
+      }
+
+      formContainerEl.innerHTML = `
+        <form class="form-card" onsubmit="criarPostagem(event)">
+          <input type="text" id="input-emoji" placeholder="Emoji (ex: 😍, 🚀, 🤡)" maxlength="50" required />
+          <textarea id="input-texto" placeholder="O que você está pensando?" required></textarea>
+          <input type="text" id="input-hashtags" placeholder="Hashtags separadas por espaço (ex: #dev #supabase)" />
           
-          // Converte a string de hashtags em um Array de Textos
-          const hashtags = hashtagsRaw ? hashtagsRaw.split(" ").filter(h => h.length > 0) : [];
-    
-          const { error } = await supabaseClient
-            .from("postagens")
-            .insert([{ emoji, texto, hashtags }]);
-    
-          if (error) {
-            alert("Erro ao criar postagem!");
-            console.error(error);
-            return;
-          }
-    
-          formContainerEl.innerHTML = ""; // Desrenderiza o formulário após postar
-          carregarPostagens(); // Recarrega a lista
-        }
-    
-        // Busca os posts no banco
-        async function carregarPostagens() {
-          const { data: postagens, error } = await supabaseClient
-            .from("postagens")
-            .select("*")
-            .order("created_at", { ascending: false });
-    
-          if (error) {
-            feedEl.innerHTML = "<p>Erro ao carregar postagens.</p>";
-            console.error(error);
-            return;
-          }
-    
-          if (postagens.length === 0) {
-            feedEl.innerHTML = "<p>Nenhuma postagem encontrada.</p>";
-            return;
-          }
-    
-          feedEl.innerHTML = "";
-          postagens.forEach(post => {
-            const card = document.createElement("div");
-            card.className = "card";
-    
-            const hashtagsTexto = post.hashtags ? post.hashtags.join(" ") : "";
-            const listaComentariosHTML = (post.comentarios || [])
-              .map(c => `<li>${c}</li>`)
-              .join("");
-    
-            card.innerHTML = `
-              <div class="box emoji-box">${post.emoji || '❤️'}</div>
-              <div class="box texto-box">${post.texto}</div>
-              <div class="box hashtags-box">${hashtagsTexto}</div>
-              
-              <div class="box likes-box">
-                <span>❤️ ${post.likes || 0} Likes</span>
-                <button class="btn-like" onclick="curtirPost(${post.id}, ${post.likes || 0})">Curtir</button>
-              </div>
-    
-              <div class="box comentarios-box">
-                <strong>Comentários:</strong>
-                <ul class="lista-comentarios">${listaComentariosHTML}</ul>
-                <form class="form-comentario" onsubmit="adicionarComentario(event, ${post.id}, ${JSON.stringify(post.comentarios || []).replace(/"/g, '&quot;')})">
-                  <input type="text" placeholder="Comentar..." required />
-                  <button type="submit">Enviar</button>
-                </form>
-              </div>
-            `;
-    
-            feedEl.appendChild(card);
-          });
-        }
-    
-        async function curtirPost(id, likesAtuais) {
-          const { error } = await supabaseClient
-            .from("postagens")
-            .update({ likes: likesAtuais + 1 })
-            .eq("id", id);
-    
-          if (!error) carregarPostagens();
-        }
-    
-        async function adicionarComentario(event, id, comentariosAtuais) {
-          event.preventDefault();
-          const input = event.target.querySelector("input");
-          const novoComentario = input.value.trim();
-    
-          if (!novoComentario) return;
-    
-          const { error } = await supabaseClient
-            .from("postagens")
-            .update({ comentarios: [...comentariosAtuais, novoComentario] })
-            .eq("id", id);
-    
-          if (!error) carregarPostagens();
-        }
-    
-        carregarPostagens();
-      </script>
-    </body>
-    </html>
-    ```
+          <div class="form-acoes">
+            <button type="button" class="btn-cancelar" onclick="toggleFormulario()">Cancelar</button>
+            <button type="submit" class="btn-enviar">Publicar</button>
+          </div>
+        </form>
+      `;
+    }
+
+    // Alterna o formulário de pesquisa
+    function togglePesquisa() {
+      formContainerEl.innerHTML = ""; // Fecha postagem se estiver aberta
+      if (searchContainerEl.innerHTML !== "") {
+        searchContainerEl.innerHTML = "";
+        return;
+      }
+
+      searchContainerEl.innerHTML = `
+        <form class="form-card" onsubmit="executarPesquisa(event)">
+          <input type="text" id="input-busca-hashtag" placeholder="Digite a hashtag (ex: #dev ou dev)" required />
+          <div class="form-acoes">
+            <button type="button" class="btn-cancelar" onclick="togglePesquisa()">Cancelar</button>
+            <button type="submit" class="btn-enviar" style="background:#8b5cf6;">Buscar</button>
+          </div>
+        </form>
+      `;
+    }
+
+    // Executa o filtro de busca
+    function executarPesquisa(event) {
+      event.preventDefault();
+      let term = document.getElementById("input-busca-hashtag").value.trim();
+      
+      // Adiciona o '#' caso o usuário tenha digitado sem
+      if (!term.startsWith('#')) {
+        term = '#' + term;
+      }
+
+      hashtagAtual = term;
+      searchContainerEl.innerHTML = ""; // Esconde o input após a busca
+      carregarPostagens();
+    }
+
+    // Limpa a busca e volta ao feed normal
+    function limparFiltro() {
+      hashtagAtual = null;
+      filtroContainerEl.innerHTML = "";
+      carregarPostagens();
+    }
+
+    // Envia o novo post para o Supabase
+    async function criarPostagem(event) {
+      event.preventDefault();
+
+      const emoji = document.getElementById("input-emoji").value.trim();
+      const texto = document.getElementById("input-texto").value.trim();
+      const hashtagsRaw = document.getElementById("input-hashtags").value.trim();
+      
+      // Converte a string em Array e garante o caractere '#'
+      const hashtags = hashtagsRaw
+        ? hashtagsRaw.split(" ")
+            .filter(h => h.length > 0)
+            .map(h => h.startsWith('#') ? h : '#' + h)
+        : [];
+
+      const { error } = await supabaseClient
+        .from("postagens")
+        .insert([{ emoji, texto, hashtags }]);
+
+      if (error) {
+        alert("Erro ao criar postagem!");
+        console.error(error);
+        return;
+      }
+
+      formContainerEl.innerHTML = "";
+      carregarPostagens();
+    }
+
+    // Busca os posts no banco (com ou sem filtro)
+    async function carregarPostagens() {
+      let query = supabaseClient
+        .from("postagens")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      // Se houver pesquisa ativa, filtra a coluna array no Postgres
+      if (hashtagAtual) {
+        query = query.contains("hashtags", [hashtagAtual]);
+        
+        filtroContainerEl.innerHTML = `
+          <div class="filtro-ativo">
+            <span>Filtrando por: ${hashtagAtual}</span>
+            <button class="btn-limpar-filtro" onclick="limparFiltro()">Limpar ✖</button>
+          </div>
+        `;
+      } else {
+        filtroContainerEl.innerHTML = "";
+      }
+
+      const { data: postagens, error } = await query;
+
+      if (error) {
+        feedEl.innerHTML = "<p>Erro ao carregar postagens.</p>";
+        console.error(error);
+        return;
+      }
+
+      if (postagens.length === 0) {
+        feedEl.innerHTML = "<p>Nenhuma postagem encontrada com esses critérios.</p>";
+        return;
+      }
+
+      feedEl.innerHTML = "";
+      postagens.forEach(post => {
+        const card = document.createElement("div");
+        card.className = "card";
+
+        const hashtagsTexto = post.hashtags ? post.hashtags.join(" ") : "";
+        const listaComentariosHTML = (post.comentarios || [])
+          .map(c => `<li>${c}</li>`)
+          .join("");
+
+        card.innerHTML = `
+          <div class="box emoji-box">${post.emoji || '❤️'}</div>
+          <div class="box texto-box">${post.texto}</div>
+          <div class="box hashtags-box">${hashtagsTexto}</div>
+          
+          <div class="box likes-box">
+            <span>❤️ ${post.likes || 0} Likes</span>
+            <button class="btn-like" onclick="curtirPost(${post.id}, ${post.likes || 0})">Curtir</button>
+          </div>
+
+          <div class="box comentarios-box">
+            <strong>Comentários:</strong>
+            <ul class="lista-comentarios">${listaComentariosHTML}</ul>
+            <form class="form-comentario" onsubmit="adicionarComentario(event, ${post.id}, ${JSON.stringify(post.comentarios || []).replace(/"/g, '&quot;')})">
+              <input type="text" placeholder="Comentar..." required />
+              <button type="submit">Enviar</button>
+            </form>
+          </div>
+        `;
+
+        feedEl.appendChild(card);
+      });
+    }
+
+    async function curtirPost(id, likesAtuais) {
+      const { error } = await supabaseClient
+        .from("postagens")
+        .update({ likes: likesAtuais + 1 })
+        .eq("id", id);
+
+      if (!error) carregarPostagens();
+    }
+
+    async function adicionarComentario(event, id, comentariosAtuais) {
+      event.preventDefault();
+      const input = event.target.querySelector("input");
+      const novoComentario = input.value.trim();
+
+      if (!novoComentario) return;
+
+      const { error } = await supabaseClient
+        .from("postagens")
+        .update({ comentarios: [...comentariosAtuais, novoComentario] })
+        .eq("id", id);
+
+      if (!error) carregarPostagens();
+    }
+
+    carregarPostagens();
+  </script>
+</body>
