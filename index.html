@@ -79,7 +79,7 @@
     }
 
     .btn-enviar {
-      background: #10b981;
+      background: #ff0000;
       color: white;
       border: 2px solid #222;
       padding: 8px 14px;
@@ -112,7 +112,13 @@
       cursor: pointer;
     }
 
-    #feed { display: flex; flex-direction: column; gap: 20px; width: 100%; max-width: 450px; }
+    #feed {  
+  display: grid; 
+  grid-template-columns: repeat(2, 1fr); /* Cria 2 colunas de tamanhos iguais */
+  gap: 20px; 
+  width: 100%; 
+  max-width: 900px; /* Aumentado de 450px para 900px para acomodar 2 colunas */
+}
 
     /* Card da Postagem */
     .card {
@@ -146,8 +152,8 @@
     }
 
     .btn-like {
-      background: #ff4757;
-      color: white;
+      background: #ff0015;
+      color: rgb(0, 0, 0);
       border: none;
       padding: 6px 12px;
       border-radius: 6px;
