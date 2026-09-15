@@ -59,6 +59,8 @@
       border: 2px solid #ef0000;
       border-radius: 8px;
       font-size: 0.95rem;
+      background: #000;
+      color: #fff;
     }
 
     .form-card textarea { resize: vertical; min-height: 70px; }
@@ -76,6 +78,7 @@
       border-radius: 8px;
       cursor: pointer;
       font-weight: bold;
+      color: #000;
     }
 
     .btn-enviar {
@@ -113,12 +116,16 @@
     }
 
     #feed {  
-  display: grid; 
-  grid-template-columns: repeat(2, 1fr); /* Cria 2 colunas de tamanhos iguais */
-  gap: 20px; 
-  width: 100%; 
-  max-width: 900px; /* Aumentado de 450px para 900px para acomodar 2 colunas */
-}
+      display: grid; 
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px; 
+      width: 100%; 
+      max-width: 900px;
+    }
+
+    @media (max-width: 600px) {
+      #feed { grid-template-columns: 1fr; }
+    }
 
     /* Card da Postagem */
     .card {
@@ -162,13 +169,24 @@
     }
     .btn-like:active { transform: scale(0.95); }
     
-    /* Estilo para quando o botão estiver desabilitado/curtido */
     .btn-like:disabled {
       background: #cbd5e1;
       color: #64748b;
       cursor: not-allowed;
       transform: none;
     }
+
+    .btn-editar {
+      background: #f59e0b;
+      color: #000;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-top: 5px;
+    }
+    .btn-editar:active { transform: scale(0.95); }
 
     .comentarios-box {
       text-align: left;
@@ -187,6 +205,7 @@
 
     .lista-comentarios li {
       background: #f1f2f6;
+      color: #000;
       padding: 6px 10px;
       border-radius: 6px;
       font-size: 0.85rem;
@@ -198,6 +217,8 @@
       padding: 6px;
       border: 1px solid #ccc;
       border-radius: 6px;
+      background: #fff;
+      color: #000;
     }
     .form-comentario button {
       padding: 6px 12px;
@@ -263,6 +284,7 @@
           <input type="text" id="input-emoji" placeholder="Emoji (ex: 😍, 🚀, 🤡)" maxlength="50" required />
           <textarea id="input-texto" placeholder="O que você está pensando?" required></textarea>
           <input type="text" id="input-hashtags" placeholder="Hashtags separadas por espaço (ex: #dev #supabase)" />
+          <input type="password" id="input-login" placeholder="Crie uma senha para editar esta postagem" required />
           
           <div class="form-acoes">
             <button type="button" class="btn-cancelar" onclick="toggleFormulario()">Cancelar</button>
@@ -319,6 +341,7 @@
       const emoji = document.getElementById("input-emoji").value.trim();
       const texto = document.getElementById("input-texto").value.trim();
       const hashtagsRaw = document.getElementById("input-hashtags").value.trim();
+      const login = document.getElementById("input-login").value.trim();
       
       const hashtags = hashtagsRaw
         ? hashtagsRaw.split(" ")
@@ -328,7 +351,7 @@
 
       const { error } = await supabaseClient
         .from("postagens")
-        .insert([{ emoji, texto, hashtags }]);
+        .insert([{ emoji, texto, hashtags, login }]);
 
       if (error) {
         alert("Erro ao criar postagem!");
@@ -336,6 +359,81 @@
         return;
       }
 
+      formContainerEl.innerHTML = "";
+      carregarPostagens();
+    }
+
+    // Inicia a edição do post exigindo a verificação de senha
+    async function iniciarEdicao(id) {
+      const senhaInformada = prompt("Digite a senha desta postagem para editá-la:");
+
+      if (!senhaInformada) return;
+
+      // Consulta no Supabase se a senha (coluna login) bate com a postagem
+      const { data: post, error } = await supabaseClient
+        .from("postagens")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error || !post) {
+        alert("Erro ao verificar a postagem!");
+        return;
+      }
+
+      if (post.login !== senhaInformada) {
+        alert("Senha incorreta!");
+        return;
+      }
+
+      // Se a senha estiver correta, abre o formulário de edição
+      searchContainerEl.innerHTML = "";
+      const hashtagsTexto = post.hashtags ? post.hashtags.join(" ") : "";
+
+      formContainerEl.innerHTML = `
+        <form class="form-card" onsubmit="salvarEdicao(event, ${post.id})">
+          <h3 style="color:#ff0000; text-align:center;">Editar Postagem</h3>
+          <input type="text" id="edit-emoji" value="${post.emoji || ''}" placeholder="Emoji" maxlength="50" required />
+          <textarea id="edit-texto" placeholder="Texto" required>${post.texto || ''}</textarea>
+          <input type="text" id="edit-hashtags" value="${hashtagsTexto}" placeholder="Hashtags" />
+          
+          <div class="form-acoes">
+            <button type="button" class="btn-cancelar" onclick="formContainerEl.innerHTML=''">Cancelar</button>
+            <button type="submit" class="btn-enviar">Salvar Alterações</button>
+          </div>
+        </form>
+      `;
+
+      // Rola até o topo para facilitar a visualização do formulário
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Salva a edição do post no Supabase
+    async function salvarEdicao(event, id) {
+      event.preventDefault();
+
+      const emoji = document.getElementById("edit-emoji").value.trim();
+      const texto = document.getElementById("edit-texto").value.trim();
+      const hashtagsRaw = document.getElementById("edit-hashtags").value.trim();
+
+      const hashtags = hashtagsRaw
+        ? hashtagsRaw.split(" ")
+            .filter(h => h.length > 0)
+            .map(h => h.startsWith('#') ? h : '#' + h)
+        : [];
+
+      const { error } = await supabaseClient
+        .from("postagens")
+        .update({ emoji, texto, hashtags })
+        .eq("id", id);
+
+      if (error) {
+        alert("Erro ao atualizar postagem!");
+        console.error(error);
+        return;
+      }
+
+      alert("Postagem atualizada com sucesso!");
       formContainerEl.innerHTML = "";
       carregarPostagens();
     }
@@ -405,6 +503,8 @@
             </button>
           </div>
 
+          <button class="btn-editar" onclick="iniciarEdicao(${post.id})">✏️ Editar Postagem</button>
+
           <div class="box comentarios-box">
             <strong>Comentários:</strong>
             <ul class="lista-comentarios">${listaComentariosHTML}</ul>
@@ -420,7 +520,6 @@
     }
 
     async function curtirPost(id, likesAtuais) {
-      // Bloqueio de segurança no código antes da chamada da API
       const curtidasLocais = getCurtidasLocais();
       if (curtidasLocais.includes(id)) return;
 
@@ -430,7 +529,7 @@
         .eq("id", id);
 
       if (!error) {
-        salvarCurtidaLocal(id); // Registra a curtida no navegador do usuário
+        salvarCurtidaLocal(id);
         carregarPostagens();
       }
     }
