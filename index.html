@@ -186,7 +186,7 @@
       border-radius: 6px;
       cursor: pointer;
       font-weight: bold;
-      width: 100%;
+      width: 25%;
     }
     .btn-editar:active { transform: scale(0.95); }
 
@@ -490,7 +490,7 @@
         const jaCurtido = curtidasLocais.includes(post.id);
 
         card.innerHTML = `
-          <button class="btn-editar" onclick="iniciarEdicao(${post.id})">✏️ Editar Postagem</button>
+          <button class="btn-editar" onclick="iniciarEdicao(${post.id})">✏️ Editar</button>
           <div class="box emoji-box">${post.emoji || '❤️'}</div>
           <div class="box texto-box">${post.texto}</div>
           <div class="box hashtags-box">${hashtagsTexto}</div>
